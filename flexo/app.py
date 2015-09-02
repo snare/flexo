@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
 from mongoengine import *
 from passlib.hash import pbkdf2_sha256
+from scruffy import *
 
 
 app = Flask(__name__, static_url_path='/static')
@@ -12,6 +13,25 @@ api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+
+def setup():
+    global env, config
+
+    # Set up scruffy environment
+    env = Environment(
+        dir=Directory('~/.flexo', create=False,
+            config=ConfigFile('config', defaults=File('default.conf', parent=PackageDirectory()), apply_env=True)
+        )
+    )
+    config = env.config
+
+    # Connect to the database
+    connect(host=config.db_uri)
+
+    # Make sure there's at least an admin user
+    if len(User.objects) == 0:
+        User(name='admin', password='admin').save()
 
 
 class User(Document, UserMixin):
@@ -57,7 +77,7 @@ def login():
                 d = {'ok': True, 'name': users[0].name, 'info': 'Successful authentication'}
             else:
                 d = {'ok': False, 'info': 'Authentication failed'}
-        except:
+        except Exception as e:
             d = {'ok': False, 'info': 'Missing creds'}
     return jsonify(d)
 
@@ -82,5 +102,7 @@ class HelloWorld(Resource):
     def get(self):
         return {'hello': 'world'}
 
+
+setup()
 
 api.add_resource(HelloWorld, '/')

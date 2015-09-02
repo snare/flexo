@@ -1,6 +1,6 @@
 from mongoengine import *
 
-from .user import User
+from .app import User
 
 
 class Exercise(Document):

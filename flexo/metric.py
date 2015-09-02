@@ -1,7 +1,7 @@
 from mongoengine import *
 
 from .template import Exercise
-from .user import User
+from .app import User
 
 
 class MaxCalc(object):

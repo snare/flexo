@@ -31,6 +31,7 @@ var MainNav = React.createClass({
                 <MenuItem divider />
                 <MenuItem eventKey='4'>Separated link</MenuItem>
               </NavDropdown>
+              <NavItem eventKey={4} href='#' onClick={this.props.logout}>Logout</NavItem>
             </Nav>
           </Navbar>
         );
@@ -38,25 +39,24 @@ var MainNav = React.createClass({
 });
 
 
-var LoginForm = React.createClass({
+var DashboardView = React.createClass({
+    render: function() {
+        return (
+          <div>
+            <MainNav logout={this.props.logout}/>
+          </div>
+        );
+    }
+});
+
+
+var LoginView = React.createClass({
     mixins: [React.addons.LinkedStateMixin],
     getInitialState: function() {
         return {name: '', password: ''};
     },
-    handleClick: function() {
-        $.ajax({
-            type: "POST",
-            url: "/login",
-            data: JSON.stringify(this.state),
-            contentType: "application/json",
-            dataType: "json",
-            success: function(data) {
-                console.log(data);
-            },
-            failure: function(errMsg) {
-                console.log(errMsg);
-            }
-        });
+    login: function() {
+        this.props.login(this.state);
     },
     render: function() {
         return (
@@ -72,20 +72,75 @@ var LoginForm = React.createClass({
                     <input type="checkbox" value="remember-me"/> Remember me
                   </label>
                 </div>
-                <button className="btn btn-lg btn-primary btn-block" onClick={this.handleClick}>Sign in</button>
+                <button className="btn btn-lg btn-primary btn-block" onClick={this.login}>Sign in</button>
               </form>
             </div>
         );
     }
 });
 
-var MainView = React.createClass({
+
+var LoadingView = React.createClass({
     render: function() {
         return (
-            <div>
-                <LoginForm/>
-            </div>
+            <p className="text-center">
+                <br/><br/><br/>
+                <i className="fa fa-spinner fa-pulse fa-3x"></i>
+            </p>
         );
+    }
+});
+
+
+var MainView = React.createClass({
+    getInitialState: function() {
+        return {loggedIn: null};
+    },
+    componentDidMount: function() {
+        $.ajax({
+            type: "GET",
+            url: "/login",
+            dataType: "json",
+            success: function(data) {
+                this.setState({loggedIn: data.ok})
+            }.bind(this)
+        });
+    },
+    logout: function() {
+        this.setState({loggedIn: null});
+        $.ajax({
+            type: "GET",
+            url: "/logout",
+            success: function(data) {
+                this.setState({loggedIn: false});
+            }.bind(this)
+        });
+    },
+    login: function(d) {
+        this.setState({loggedIn: null});
+        $.ajax({
+            type: "POST",
+            url: "/login",
+            data: JSON.stringify(d),
+            contentType: "application/json",
+            dataType: "json",
+            success: function(data) {
+                this.setState({loggedIn: data.ok})
+            }.bind(this),
+            failure: function(errMsg) {
+                console.log(errMsg);
+            }
+        });
+    },
+    render: function() {
+        var content = '';
+        if (this.state.loggedIn)
+            content = (<DashboardView logout={this.logout}/>);
+        else if (this.state.loggedIn == null)
+            content = (<LoadingView/>);
+        else
+            content = (<LoginView login={this.login}/>);
+        return content;
     }
 });
 
