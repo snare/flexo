@@ -15,6 +15,9 @@ var Nav = ReactBootstrap.Nav;
 var NavDropdown = ReactBootstrap.NavDropdown;
 var NavItem = ReactBootstrap.NavItem;
 var MenuItem = ReactBootstrap.MenuItem;
+var Grid = ReactBootstrap.Grid;
+var Row = ReactBootstrap.Row;
+var Col = ReactBootstrap.Col;
 
 
 var MainNav = React.createClass({
@@ -22,16 +25,13 @@ var MainNav = React.createClass({
         return (
           <Navbar brand='flexo' inverse fixedTop toggleNavKey={0}>
             <Nav right eventKey={0}>
-              <NavItem eventKey={1} href='#'>Link</NavItem>
-              <NavItem eventKey={2} href='#'>Link</NavItem>
-              <NavDropdown eventKey={3} title='Dropdown' id='collapsible-navbar-dropdown'>
-                <MenuItem eventKey='1'>Action</MenuItem>
-                <MenuItem eventKey='2'>Another action</MenuItem>
-                <MenuItem eventKey='3'>Something else here</MenuItem>
+              <NavItem eventKey={2} href='#'>Templates</NavItem>
+              <NavDropdown eventKey={3} title={this.props.username} id='collapsible-navbar-dropdown'>
+                <MenuItem eventKey='1'>Profile</MenuItem>
+                <MenuItem eventKey='2'>Settings</MenuItem>
                 <MenuItem divider />
-                <MenuItem eventKey='4'>Separated link</MenuItem>
+                <MenuItem eventKey='4' onSelect={this.props.logout}>Logout</MenuItem>
               </NavDropdown>
-              <NavItem eventKey={4} href='#' onClick={this.props.logout}>Logout</NavItem>
             </Nav>
           </Navbar>
         );
@@ -39,11 +39,26 @@ var MainNav = React.createClass({
 });
 
 
-var DashboardView = React.createClass({
+var TemplatesView = React.createClass({
     render: function() {
         return (
+            <Grid style={{"margin-top": "15px"}}>
+                <Row>
+                    <Col xs={12}><h1>Templates</h1></Col>
+                </Row>
+            </Grid>
+        );
+    }
+});
+
+
+var DashboardView = React.createClass({
+    render: function() {
+        var templatesView = (<TemplatesView/>);
+        return (
           <div>
-            <MainNav logout={this.props.logout}/>
+            <MainNav logout={this.props.logout} username={this.props.username}/>
+            {templatesView}
           </div>
         );
     }
@@ -94,7 +109,7 @@ var LoadingView = React.createClass({
 
 var MainView = React.createClass({
     getInitialState: function() {
-        return {loggedIn: null};
+        return {loggedIn: null, username: null};
     },
     componentDidMount: function() {
         $.ajax({
@@ -102,7 +117,7 @@ var MainView = React.createClass({
             url: "/login",
             dataType: "json",
             success: function(data) {
-                this.setState({loggedIn: data.ok})
+                this.setState({loggedIn: data.ok, username: data.name})
             }.bind(this)
         });
     },
@@ -125,7 +140,7 @@ var MainView = React.createClass({
             contentType: "application/json",
             dataType: "json",
             success: function(data) {
-                this.setState({loggedIn: data.ok})
+                this.setState({loggedIn: data.ok, username: data.name})
             }.bind(this),
             failure: function(errMsg) {
                 console.log(errMsg);
@@ -135,7 +150,7 @@ var MainView = React.createClass({
     render: function() {
         var content = '';
         if (this.state.loggedIn)
-            content = (<DashboardView logout={this.logout}/>);
+            content = (<DashboardView logout={this.logout} username={this.state.username}/>);
         else if (this.state.loggedIn == null)
             content = (<LoadingView/>);
         else

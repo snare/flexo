@@ -68,6 +68,9 @@
 	var NavDropdown = ReactBootstrap.NavDropdown;
 	var NavItem = ReactBootstrap.NavItem;
 	var MenuItem = ReactBootstrap.MenuItem;
+	var Grid = ReactBootstrap.Grid;
+	var Row = ReactBootstrap.Row;
+	var Col = ReactBootstrap.Col;
 
 
 	var MainNav = React.createClass({displayName: "MainNav",
@@ -75,16 +78,13 @@
 	        return (
 	          React.createElement(Navbar, {brand: "flexo", inverse: true, fixedTop: true, toggleNavKey: 0}, 
 	            React.createElement(Nav, {right: true, eventKey: 0}, 
-	              React.createElement(NavItem, {eventKey: 1, href: "#"}, "Link"), 
-	              React.createElement(NavItem, {eventKey: 2, href: "#"}, "Link"), 
-	              React.createElement(NavDropdown, {eventKey: 3, title: "Dropdown", id: "collapsible-navbar-dropdown"}, 
-	                React.createElement(MenuItem, {eventKey: "1"}, "Action"), 
-	                React.createElement(MenuItem, {eventKey: "2"}, "Another action"), 
-	                React.createElement(MenuItem, {eventKey: "3"}, "Something else here"), 
+	              React.createElement(NavItem, {eventKey: 2, href: "#"}, "Templates"), 
+	              React.createElement(NavDropdown, {eventKey: 3, title: this.props.username, id: "collapsible-navbar-dropdown"}, 
+	                React.createElement(MenuItem, {eventKey: "1"}, "Profile"), 
+	                React.createElement(MenuItem, {eventKey: "2"}, "Settings"), 
 	                React.createElement(MenuItem, {divider: true}), 
-	                React.createElement(MenuItem, {eventKey: "4"}, "Separated link")
-	              ), 
-	              React.createElement(NavItem, {eventKey: 4, href: "#", onClick: this.props.logout}, "Logout")
+	                React.createElement(MenuItem, {eventKey: "4", onSelect: this.props.logout}, "Logout")
+	              )
 	            )
 	          )
 	        );
@@ -92,11 +92,26 @@
 	});
 
 
-	var DashboardView = React.createClass({displayName: "DashboardView",
+	var TemplatesView = React.createClass({displayName: "TemplatesView",
 	    render: function() {
 	        return (
+	            React.createElement(Grid, {style: {"margin-top": "15px"}}, 
+	                React.createElement(Row, null, 
+	                    React.createElement(Col, {xs: 12}, React.createElement("h1", null, "Templates"))
+	                )
+	            )
+	        );
+	    }
+	});
+
+
+	var DashboardView = React.createClass({displayName: "DashboardView",
+	    render: function() {
+	        var templatesView = (React.createElement(TemplatesView, null));
+	        return (
 	          React.createElement("div", null, 
-	            React.createElement(MainNav, {logout: this.props.logout})
+	            React.createElement(MainNav, {logout: this.props.logout, username: this.props.username}), 
+	            templatesView
 	          )
 	        );
 	    }
@@ -147,7 +162,7 @@
 
 	var MainView = React.createClass({displayName: "MainView",
 	    getInitialState: function() {
-	        return {loggedIn: null};
+	        return {loggedIn: null, username: null};
 	    },
 	    componentDidMount: function() {
 	        $.ajax({
@@ -155,7 +170,7 @@
 	            url: "/login",
 	            dataType: "json",
 	            success: function(data) {
-	                this.setState({loggedIn: data.ok})
+	                this.setState({loggedIn: data.ok, username: data.name})
 	            }.bind(this)
 	        });
 	    },
@@ -178,7 +193,7 @@
 	            contentType: "application/json",
 	            dataType: "json",
 	            success: function(data) {
-	                this.setState({loggedIn: data.ok})
+	                this.setState({loggedIn: data.ok, username: data.name})
 	            }.bind(this),
 	            failure: function(errMsg) {
 	                console.log(errMsg);
@@ -188,7 +203,7 @@
 	    render: function() {
 	        var content = '';
 	        if (this.state.loggedIn)
-	            content = (React.createElement(DashboardView, {logout: this.logout}));
+	            content = (React.createElement(DashboardView, {logout: this.logout, username: this.state.username}));
 	        else if (this.state.loggedIn == null)
 	            content = (React.createElement(LoadingView, null));
 	        else
