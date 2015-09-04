@@ -1,1 +1,1 @@
-web: gunicorn flexo:app --log-file -
+web: gunicorn flexo.wsgi:app --log-file -

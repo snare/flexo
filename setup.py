@@ -10,7 +10,8 @@ setup(
     keywords="",
     url="https://github.com/snare/flexo",
     packages=find_packages(),
-    install_requires=['scruffington', 'mongoengine', 'flask', 'flask-restful', 'flask-login', 'passlib'],
+    install_requires=['scruffington', 'mongoengine', 'flask', 'flask-restful', 'flask-login', 'flask-mongoengine',
+                      'passlib'],
     entry_points={
         'console_scripts': ['flexo=flexo:main']
     }

@@ -1,21 +1,20 @@
-from flask import Flask, jsonify, request
+import json
+from flask import Flask, jsonify, request, Blueprint, send_from_directory, current_app
 from flask_restful import Resource, Api
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
-from mongoengine import *
+from flask.ext.mongoengine import MongoEngine
 from passlib.hash import pbkdf2_sha256
 from scruffy import *
 
+from .metric import MetricGroup
+from .user import User
+from .template import Exercise
 
-app = Flask(__name__, static_url_path='/static')
-app.secret_key = 'baloney'
-api = Api(app)
-
+main = Blueprint('main', __name__)
 login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
 
 
-def setup():
+def create_app(config_dict={}):
     global env, config
 
     # Set up scruffy environment
@@ -26,37 +25,30 @@ def setup():
     )
     config = env.config
 
-    # Connect to the database
-    connect(host=config.db_uri)
+    # Setup flask app
+    app = Flask(__name__, static_url_path='/static')
+    app.secret_key = config.secret
+    app.config["MONGODB_SETTINGS"] = {'host': config.db_uri}
+    app.config.update(config_dict)
+    app.register_blueprint(main)
+
+    # Setup database
+    app.db = MongoEngine(app)
+
+    # Setup login_manager
+    login_manager.init_app(app)
+    login_manager.login_view = 'login'
+
+    # Setup API
+    api = Api(app)
+    api.add_resource(MetricAPI, '/api/metric')
+    api.add_resource(ExerciseAPI, '/api/exercise')
 
     # Make sure there's at least an admin user
     if len(User.objects) == 0:
         User(name='admin', password='admin').save()
 
-
-class User(Document, UserMixin):
-    """
-    A user in the database.
-    """
-    name = StringField()
-    password_hash = StringField()
-
-    def __init__(self, password=None, *args, **kwargs):
-        super(User, self).__init__(*args, **kwargs)
-        self.password = password
-
-    def __str__(self):
-        return "User(name={})".format(self.name)
-
-    def get_id(self):
-        return self.name
-
-    def save(self, *args, **kwargs):
-        # Before we save, update the hash if there's a plaintext password present
-        if self.password:
-            self.password_hash = pbkdf2_sha256.encrypt(self.password, rounds=200000, salt_size=16)
-            self.password = None
-        super(User, self).save(*args, **kwargs)
+    return app
 
 
 @login_manager.user_loader
@@ -64,7 +56,7 @@ def load_user(user_id):
     return User.objects(name=user_id)[0]
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@main.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET' and current_user.is_authenticated():
         d = {'ok': True, 'name': current_user.name, 'info': 'Already authenticated'}
@@ -82,27 +74,22 @@ def login():
     return jsonify(d)
 
 
-@app.route('/logout')
+@main.route('/api/logout')
 def logout():
     logout_user()
     return jsonify({'ok': True, 'info': 'Logged out'})
 
 
-@app.route('/')
+@main.route('/')
 def index():
-    return app.send_static_file('index.html')
+    return current_app.send_static_file('index.html')
 
 
-@app.route('/static/<path:path>')
-def send_static(path):
-    return send_from_directory('static', path)
-
-
-class HelloWorld(Resource):
+class MetricAPI(Resource):
     def get(self):
-        return {'hello': 'world'}
+        return json.loads(MetricGroup.objects(user=current_user.id).to_json())
 
 
-setup()
-
-api.add_resource(HelloWorld, '/')
+class ExerciseAPI(Resource):
+    def get(self):
+        return json.loads(Exercise.objects.to_json())
