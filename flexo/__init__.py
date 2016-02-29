@@ -1,6 +1,4 @@
-from .metric import *
-from .template import *
-from .user import *
+import program
 from .app import create_app
 
 

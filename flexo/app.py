@@ -8,7 +8,7 @@ from scruffy import *
 
 from .metric import MetricGroup
 from .user import User
-from .template import Exercise
+from .program import Exercise
 
 main = Blueprint('main', __name__)
 login_manager = LoginManager()
@@ -58,7 +58,7 @@ def load_user(user_id):
 
 @main.route('/api/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'GET' and current_user.is_authenticated():
+    if request.method == 'GET' and current_user.is_authenticated:
         d = {'ok': True, 'name': current_user.name, 'info': 'Already authenticated'}
     else:
         try:

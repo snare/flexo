@@ -12,7 +12,10 @@ app = None
 
 def setup():
     global app, u, c
-    app = create_app({"MONGODB_SETTINGS": {'DB': 'testdb'}})
+    app = create_app({"MONGODB_SETTINGS": {
+        'db': 'testdb',
+        'host': '192.168.99.100'
+    }})
     c = app.test_client()
     u = User(name="testuser", password="test")
     u.save()
